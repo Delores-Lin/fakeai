@@ -1,6 +1,6 @@
 require('dotenv').config();
 const express = require("express");
-const bcrypt = require('bcyptjs');
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -25,7 +25,7 @@ const generateToken = (userId) => {
 
 
 //用户注册
-app.post('api/register',async(req,res,next) => {
+app.post('/api/register',async(req,res,next) => {
     try {
         const {email,password} = req.body;
 
@@ -102,6 +102,9 @@ app.use((err,req,res,next)=>{
     if(err.code === 'ER_DUP_ENTRY'){
         return res.status(409).json({error:'邮箱已被注册'});
     }
+    if (err.name === 'TokenExpiredError') {
+        return res.status(401).json({error: '令牌已过期'});
+    }
 
     res.status(500).json({error:"服务器内部错误"});
 })
@@ -121,3 +124,12 @@ process.on('SIGTERM',() => {
         console.log('HTTP server closed');
     })
 })
+
+const rateLimit = require('express-rate-limit');
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15分钟
+  max: 100, // 每个IP最多100次请求
+});
+app.use(limiter);
+
+app.use(express.json({ limit: '10kb' }));
