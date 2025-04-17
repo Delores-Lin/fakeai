@@ -9,10 +9,17 @@ const pool = require('./db');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-app.use(express.json());//解析JSON请求
+const rateLimit = require('express-rate-limit');
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15分钟
+  max: 100, // 每个IP最多100次请求
+});
+app.use(express.json({ limit: '10kb' }));
 app.use(cors());//允许跨域请求
 app.use(helmet());
 app.use(morgan('combined'));
+app.use(limiter);
+
 
 const validateEmail = (email) => {
     const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -125,11 +132,3 @@ process.on('SIGTERM',() => {
     })
 })
 
-const rateLimit = require('express-rate-limit');
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15分钟
-  max: 100, // 每个IP最多100次请求
-});
-app.use(limiter);
-
-app.use(express.json({ limit: '10kb' }));
